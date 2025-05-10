@@ -7,7 +7,7 @@ import {
 import {
   Link, Users, Clock, Smartphone, Globe, RefreshCw, MapPin, AlertCircle, Loader2
 } from "lucide-react";
-import "./modren.css";
+import "./modern.css";
 
 // Fallback data structure
 const FALLBACK_DATA = {
