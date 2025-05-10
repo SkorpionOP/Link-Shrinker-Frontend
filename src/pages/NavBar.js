@@ -29,7 +29,7 @@ const NavBar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Link to="/" className="navbar-logo">LINKSHORTENER</Link>
+        <Link to="/" className="navbar-logo">Shrinkoo</Link>
       </div>
       <ul className="navbar-menu">
         <li className="navbar-item">
