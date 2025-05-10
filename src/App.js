@@ -63,7 +63,7 @@ function App() {
         {/* Navbar */}
         <nav className="navbar">
           <div className="logo">
-            <Link to="/">LinkShortener</Link>
+            <Link to="/">Shrinkoo</Link>
           </div>
 
           <div className="nav-links">
