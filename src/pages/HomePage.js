@@ -12,13 +12,14 @@ const HomePage = ({ uid }) => {
   const axiosWithAuth = () => {
     // Get token from localStorage if available
     const token = localStorage.getItem('authToken');
-    return axios.create({
-      baseURL: 'http://localhost:5000',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
-      }
-    });
+return axios.create({
+  baseURL: 'https://link-shrinker-backend.onrender.com', // Fix: close the string properly
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+});
+
   };
 
   // Fetch URLs created by this user
@@ -107,12 +108,14 @@ const handleDelete = async (shortId) => {
                   
                   <h3>Shortened URL:</h3>
                   <a 
-                    href={`http://localhost:5000/${url.shortId}`} 
+                    href={`https://link-shrinker-backend.onrender.com
+/${url.shortId}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="short-url"
                   >
-                    {`http://localhost:5000/${url.shortId}`}
+                    {`https://link-shrinker-backend.onrender.com
+/${url.shortId}`}
                   </a>
                   
                   <p className="click-count">Clicks: {url.clicks}</p>
