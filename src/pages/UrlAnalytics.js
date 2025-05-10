@@ -7,18 +7,52 @@ import {
 import {
   Link, Users, Clock, Smartphone, Globe, RefreshCw, MapPin, AlertCircle, Loader2
 } from "lucide-react";
-import "./modern.css";
 
-// Fallback data structure
+import "./Analytics.css";
+
+// Custom styles (unchanged)
+const styles = {
+  container: "max-w-7xl mx-auto p-4 space-y-6 bg-gray-100 min-h-screen",
+  alertBanner: "bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded",
+  header: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4",
+  title: "text-2xl font-bold flex items-center gap-2",
+  subtitle: "text-gray-600",
+  button: "flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600",
+  cardGrid: "grid grid-cols-1 md:grid-cols-4 gap-4",
+  card: "bg-white p-6 rounded-lg shadow",
+  cardContent: "flex items-center gap-3",
+  cardLabel: "text-gray-500 text-sm",
+  cardValue: "text-2xl font-bold",
+  chartGrid: "grid grid-cols-1 lg:grid-cols-2 gap-6",
+  chartCard: "bg-white p-6 rounded-lg shadow",
+  chartTitle: "flex items-center gap-2 text-lg font-medium mb-4",
+  chartContainer: "h-80",
+  fullWidthCard: "bg-white p-6 rounded-lg shadow",
+  tableContainer: "bg-white p-6 rounded-lg shadow overflow-x-auto",
+  table: "min-w-full divide-y divide-gray-200",
+  tableHeader: "bg-gray-50",
+  tableHeaderCell: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+  tableBody: "bg-white divide-y divide-gray-200",
+  tableCell: "px-6 py-4 whitespace-nowrap text-sm text-gray-500",
+  loadingContainer: "flex flex-col items-center justify-center h-64 gap-4",
+  loadingIcon: "animate-spin h-12 w-12 text-blue-500",
+  loadingText: "text-gray-600",
+  errorContainer: "flex flex-col items-center justify-center h-64 gap-4",
+  errorIcon: "h-12 w-12 text-red-500"
+};
+
+// Fallback data aligned with API structure
 const FALLBACK_DATA = {
   originalUrl: "https://example.com/original-url",
+  shortId: "demo",
   clicks: 1284,
   createdAt: new Date().toISOString(),
   logs: Array.from({ length: 50 }, (_, i) => ({
+    _id: `fallback-${i}`,
+    shortId: "demo",
     ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-    device: ["mobile", "desktop", "tablet"][Math.floor(Math.random() * 3)],
-    country: ["US", "IN", "UK", "DE", "FR", "BR", "JP"][Math.floor(Math.random() * 7)],
-    city: ["New York", "Mumbai", "London", "Berlin", "Paris", "São Paulo", "Tokyo"][Math.floor(Math.random() * 7)],
+    country: "Unknown",
+    device: ["mobile", "desktop"][Math.floor(Math.random() * 2)],
     timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
   }))
 };
@@ -31,28 +65,31 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
   const [error, setError] = useState(null);
   const [usingFallback, setUsingFallback] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (retryCount = 2) => {
     try {
       setLoading(true);
       setError(null);
       setUsingFallback(false);
 
-      // Try to fetch real data first
       try {
         const res = await axios.get(
           `https://link-shrinker-backend.onrender.com/api/urls/analytics/${shortId}`,
-          { timeout: 5000 }
+          { timeout: 10000 } // Increased timeout
         );
-        
+
         if (res.data?.logs) {
           setData(res.data);
           return;
         }
       } catch (apiError) {
+        if (retryCount > 0) {
+          console.warn(`Retrying API call (${retryCount} attempts left)...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+          return fetchData(retryCount - 1);
+        }
         console.warn("API failed, using fallback data:", apiError.message);
       }
 
-      // If API fails, use fallback data
       setData(FALLBACK_DATA);
       setUsingFallback(true);
     } catch (err) {
@@ -78,7 +115,6 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
       const normalizedDevice = 
         device.includes('mobile') ? 'Mobile' :
         device.includes('desktop') ? 'Desktop' :
-        device.includes('tablet') ? 'Tablet' :
         'Other';
       
       acc[normalizedDevice] = (acc[normalizedDevice] || 0) + 1;
@@ -117,13 +153,6 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
       .slice(0, 5)
       .map(([name, value]) => ({ name, value }));
 
-    // Browser data (from user agent if available)
-    const browserData = data.logs.reduce((acc, log) => {
-      const browser = log.browser || 'Unknown';
-      acc[browser] = (acc[browser] || 0) + 1;
-      return acc;
-    }, {});
-
     return {
       originalUrl: data.originalUrl,
       totalClicks: data.clicks,
@@ -132,10 +161,6 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
       deviceData: Object.entries(deviceData).map(([name, value]) => ({ name, value })),
       timeData,
       countryData: sortedCountries,
-      browserData: Object.entries(browserData)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([name, value]) => ({ name, value })),
       usingFallback
     };
   };
@@ -144,21 +169,21 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
-        <p className="text-gray-600">Loading analytics data...</p>
+      <div className={styles.loadingContainer}>
+        <Loader2 className={styles.loadingIcon} />
+        <p className={styles.loadingText}>Loading analytics data...</p>
       </div>
     );
   }
 
   if (!analytics) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <AlertCircle className="h-12 w-12 text-red-500" />
-        <p className="text-gray-600">No analytics data available</p>
+      <div className={styles.errorContainer}>
+        <AlertCircle className={styles.errorIcon} />
+        <p className={styles.loadingText}>No analytics data available</p>
         <button
           onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className={styles.button}
         >
           <RefreshCw size={16} /> Try Again
         </button>
@@ -167,10 +192,9 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
   }
 
   return (
-    <div className="space-y-6 p-4 max-w-7xl mx-auto">
-      {/* Header with warning if using fallback */}
+    <div className={styles.container}>
       {analytics.usingFallback && (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4">
+        <div className={styles.alertBanner}>
           <div className="flex items-center">
             <AlertCircle className="h-6 w-6 text-yellow-500 mr-2" />
             <p className="text-yellow-700">
@@ -180,74 +204,71 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className={styles.header}>
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className={styles.title}>
             <Link className="text-blue-500" /> URL Analytics
           </h1>
-          <p className="text-gray-600">
+          <p className={styles.subtitle}>
             {analytics.originalUrl}
           </p>
         </div>
         <button
           onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className={styles.button}
         >
           <RefreshCw size={16} /> Refresh
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center gap-3">
+      <div className={styles.cardGrid}>
+        <div className={styles.card}>
+          <div className={styles.cardContent}>
             <Users className="text-blue-500" size={24} />
             <div>
-              <h3 className="text-gray-500 text-sm">Total Clicks</h3>
-              <p className="text-2xl font-bold">{analytics.totalClicks}</p>
+              <h3 className={styles.cardLabel}>Total Clicks</h3>
+              <p className={styles.cardValue}>{analytics.totalClicks}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center gap-3">
+        <div className={styles.card}>
+          <div className={styles.cardContent}>
             <Globe className="text-green-500" size={24} />
             <div>
-              <h3 className="text-gray-500 text-sm">Unique Visitors</h3>
-              <p className="text-2xl font-bold">{analytics.uniqueVisitors}</p>
+              <h3 className={styles.cardLabel}>Unique Visitors</h3>
+              <p className={styles.cardValue}>{analytics.uniqueVisitors}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center gap-3">
+        <div className={styles.card}>
+          <div className={styles.cardContent}>
             <Clock className="text-purple-500" size={24} />
             <div>
-              <h3 className="text-gray-500 text-sm">Created</h3>
-              <p className="text-2xl font-bold">{analytics.createdAt}</p>
+              <h3 className={styles.cardLabel}>Created</h3>
+              <p className={styles.cardValue}>{analytics.createdAt}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center gap-3">
+        <div className={styles.card}>
+          <div className={styles.cardContent}>
             <MapPin className="text-red-500" size={24} />
             <div>
-              <h3 className="text-gray-500 text-sm">Countries</h3>
-              <p className="text-2xl font-bold">{analytics.countryData.length}</p>
+              <h3 className={styles.cardLabel}>Countries</h3>
+              <p className={styles.cardValue}>{analytics.countryData.length}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Daily Clicks */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="flex items-center gap-2 text-lg font-medium mb-4">
+      <div className={styles.chartGrid}>
+        <div className={styles.chartCard}>
+          <h3 className={styles.chartTitle}>
             <Clock size={18} /> Daily Clicks (Last 7 Days)
           </h3>
-          <div className="h-80">
+          <div className={styles.chartContainer}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={analytics.timeData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -261,12 +282,11 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
           </div>
         </div>
 
-        {/* Device Distribution */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="flex items-center gap-2 text-lg font-medium mb-4">
+        <div className={styles.chartCard}>
+          <h3 className={styles.chartTitle}>
             <Smartphone size={18} /> Device Distribution
           </h3>
-          <div className="h-80">
+          <div className={styles.chartContainer}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -290,10 +310,9 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
         </div>
       </div>
 
-      {/* Country Distribution */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="flex items-center gap-2 text-lg font-medium mb-4">
-          <Globe size={18} /> Top Countries
+      <div className={styles.fullWidthCard}>
+        <h3 className={styles.chartTitle}>
+          <Globe size={18} /> Countries
         </h3>
         <div className="h-96">
           <ResponsiveContainer width="100%" height="100%">
@@ -318,29 +337,28 @@ const UrlAnalytics = ({ shortId = "demo" }) => {
         </div>
       </div>
 
-      {/* Recent Activity Table */}
-      <div className="bg-white p-6 rounded-lg shadow overflow-x-auto">
-        <h3 className="flex items-center gap-2 text-lg font-medium mb-4">
+      <div className={styles.tableContainer}>
+        <h3 className={styles.chartTitle}>
           <MapPin size={18} /> Recent Activity
         </h3>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className={styles.table}>
+          <thead className={styles.tableHeader}>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device</th>
+              <th className={styles.tableHeaderCell}>Time</th>
+              <th className={styles.tableHeaderCell}>Country</th>
+              <th className={styles.tableHeaderCell}>Device</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className={styles.tableBody}>
             {data.logs.slice(0, 5).map((log, index) => (
               <tr key={index}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(log.timestamp).toLocaleTimeString()}
+                <td className={styles.tableCell}>
+                  {new Date(log.timestamp).toLocaleString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {log.city}, {log.country}
+                <td className={styles.tableCell}>
+                  {log.country}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                <td className={styles.tableCell + " capitalize"}>
                   {log.device}
                 </td>
               </tr>
