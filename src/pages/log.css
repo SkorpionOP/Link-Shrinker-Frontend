@@ -145,3 +145,31 @@ button.google-btn:hover, button.github-btn:hover {
     padding: 1.2rem;
   }
 }
+/* Add to your existing styles */
+.guest-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  margin: 8px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.guest-btn:hover {
+  background-color: #5a6268;
+}
+
+.social-login {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 20px 0;
+}

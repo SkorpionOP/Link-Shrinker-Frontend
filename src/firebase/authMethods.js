@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  signOut
 } from "firebase/auth";
 import { auth } from "./firebase";
 
@@ -30,3 +31,18 @@ export const registerWithEmail = (email, password) =>
 
 // Reset password
 export const sendResetEmail = (email) => sendPasswordResetEmail(auth, email);
+
+// Logout function
+export const logoutUser = async () => {
+  await signOut(auth);
+  // Clear any cached authentication data
+  if (window.localStorage) {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('firebase:authUser:')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
+  // Force a complete refresh
+  window.location.reload();
+};

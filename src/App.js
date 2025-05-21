@@ -1,43 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom';
 import './pages/modern.css';
 
 // Import Firebase authentication
 import { auth } from './firebase/firebase'; // Assuming firebase.js is in the same directory
-import { onAuthStateChanged } from 'firebase/auth';
 
 // Import pages
 import LoginPage from './pages/Login';
-import HomePage from './pages/HomePage';
+import DashboardPage from './pages/Dashboard'; // Renamed from HomePage based on your App.js
 import QRCodeGenerator from './pages/qrGen';
 import UrlAnalytics from './pages/UrlAnalytics';
-import UrlShortener from './pages/shortUrl';
+import UrlShortener from './pages/shortUrl'; // ✅ Import Shortener
 
 function App() {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [uid, setUid] = useState("guest");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   const toggleMobileMenu = () => setMobileMenuOpen(!isMobileMenuOpen);
 
   useEffect(() => {
-    // Listen to auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsLoading(true); // Start loading when checking auth state
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        const token = await user.getIdToken();
-        localStorage.setItem('authToken', token);
-        setUid(user.uid);
+        setUid(user.uid); // Set UID when the user is authenticated
         setIsAuthenticated(true);
-        console.log('Authenticated:', { uid: user.uid, token });
       } else {
-        localStorage.removeItem('authToken');
-        setUid("guest");
+        setUid("guest"); // Set UID as 'guest' when the user is not logged in
         setIsAuthenticated(false);
-        console.log('Not authenticated, uid set to guest');
       }
-      setIsLoading(false); // Stop loading once auth state is resolved
     });
 
     return () => unsubscribe(); // Cleanup the listener on unmount
@@ -46,16 +36,11 @@ function App() {
   const handleLogout = async () => {
     try {
       await auth.signOut();
-      localStorage.removeItem('authToken');
-      // onAuthStateChanged will handle setting uid and isAuthenticated
+      // No need to manually set UID or isAuthenticated as the auth listener will handle it
     } catch (error) {
       console.error('Error during logout:', error);
     }
   };
-
-  if (isLoading) {
-    return <div className="loading-container">Loading...</div>;
-  }
 
   return (
     <Router>
@@ -63,7 +48,7 @@ function App() {
         {/* Navbar */}
         <nav className="navbar">
           <div className="logo">
-            <Link to="/">Shrinkoo</Link>
+            <Link to="/">LinkShortener</Link>
           </div>
 
           <div className="nav-links">
@@ -79,7 +64,7 @@ function App() {
           </div>
 
           <div className="mobile-menu-button" onClick={toggleMobileMenu}>
-            ☰
+            &#9776;
           </div>
         </nav>
 
@@ -90,7 +75,7 @@ function App() {
           <Link to="/qrcode" className="mobile-nav-link" onClick={toggleMobileMenu}>QR Code</Link>
           <Link to="/analytics" className="mobile-nav-link" onClick={toggleMobileMenu}>Analytics</Link>
           {isAuthenticated ? (
-            <button onClick={() => { handleLogout(); toggleMobileMenu(); }} className="mobile-nav-link logout-button">
+            <button onClick={() => {handleLogout(); toggleMobileMenu();}} className="mobile-nav-link logout-button">
               Logout
             </button>
           ) : (
@@ -105,14 +90,12 @@ function App() {
             <Route path="/shorten" element={<UrlShortener uid={uid} />} />
             <Route path="/login" element={<LoginPage setUid={setUid} />} />
             <Route path="/qrcode" element={<QRCodeGenerator />} />
-            <Route path="/analytics" element={<UrlAnalytics uid={uid} />} />
-            <Route path="/home" element={<Navigate to="/" replace />} />
-            <Route path="*" element={<h2>404: Page Not Found</h2>} />
+            <Route path="/analytics" element={<UrlAnalytics />} />
           </Routes>
         </div>
       </div>
     </Router>
   );
-}
+};
 
 export default App;

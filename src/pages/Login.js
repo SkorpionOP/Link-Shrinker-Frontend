@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaGoogle, FaGithub, FaArrowLeft } from "react-icons/fa";
+import { FaGoogle, FaGithub, FaArrowLeft, FaUser } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import {
   getAuth,
@@ -13,6 +13,7 @@ import {
 } from "firebase/auth";
 import "../firebase/firebase"; // make sure firebase is initialized
 import "./log.css";
+import { AuthContext } from "../context/AuthContext";
 
 const auth = getAuth();
 const googleProvider = new GoogleAuthProvider();
@@ -23,8 +24,8 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-
   const navigate = useNavigate();
+  const { loginAsGuest } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -75,6 +76,7 @@ const LoginPage = () => {
       alert(error.message);
     }
   };
+
 
   return (
     <div className="login-container">
@@ -173,23 +175,35 @@ const LoginPage = () => {
             {view === "login" && (
               <>
                 <div className="social-login">
-                  <motion.button
-                    type="button"
-                    className="google-btn"
-                    whileHover={{ scale: 1.05 }}
-                    onClick={handleGoogleLogin}
-                  >
-                    <FaGoogle /> Continue with Google
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    className="github-btn"
-                    whileHover={{ scale: 1.05 }}
-                    onClick={handleGithubLogin}
-                  >
-                    <FaGithub /> Continue with GitHub
-                  </motion.button>
-                </div>
+  <motion.button
+    type="button"
+    className="google-btn"
+    whileHover={{ scale: 1.05 }}
+    onClick={handleGoogleLogin}
+  >
+    <FaGoogle /> Continue with Google
+  </motion.button>
+  <motion.button
+    type="button"
+    className="github-btn"
+    whileHover={{ scale: 1.05 }}
+    onClick={handleGithubLogin}
+  >
+    <FaGithub /> Continue with GitHub
+  </motion.button>
+  <motion.button
+  type="button"
+  className="guest-btn"
+  whileHover={{ scale: 1.05 }}
+  onClick={() => {
+    loginAsGuest();
+    navigate('/dashboard');
+  }}
+>
+  <FaUser /> Continue as Guest
+</motion.button>
+
+</div>
 
                 <div className="aux-links">
                   <button type="button" onClick={() => setView("signup")}>
