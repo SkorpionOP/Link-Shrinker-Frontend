@@ -139,4 +139,3 @@ const NavBar = () => { // Removed showWelcomeLink prop as it's no longer needed 
 };
 
 export default NavBar;
-

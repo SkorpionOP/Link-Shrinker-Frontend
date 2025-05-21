@@ -25,10 +25,11 @@ export default function UrlShortener({ uid }) {
     setError(""); // Clear any previous errors
 
     try {
-      const response = await axios.post("http://localhost:5000/api/urls/shorten", {
-        originalUrl: longUrl.startsWith("http") ? longUrl : `https://${longUrl}`,
-        createdBy: uid || "guest", // fallback for unauthenticated users
-      });
+      const response = await axios.post("https://link-shrinker-backend.onrender.com/api/urls/shorten", {
+  originalUrl: longUrl.startsWith("http") ? longUrl : `https://${longUrl}`,
+  createdBy: uid || "guest", // fallback for unauthenticated users
+});
+
 
       setShortenedUrls((prev) => [
         ...prev,
